@@ -161,8 +161,8 @@ class OpensslIssuerPlugin(IssuerPlugin):
 
     def create_authority(self, options):
         print("options: ", options)
-        print("path: ", current_app.config.get("OPENSSL_DIR"))
-        basedir = os.path.join(current_app.config.get("OPENSSL_DIR"), options["name"])
+        print("path: ", current_app.config.get("OPENSSL_ISSUER_BASE_DIR"))
+        basedir = os.path.join(current_app.config.get("OPENSSL_ISSUER_BASE_DIR"), options["name"])
 
         initialize_CA(basedir, options["first_serial"])
 
