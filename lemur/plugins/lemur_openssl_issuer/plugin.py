@@ -24,7 +24,7 @@ RANDFILE       = $dir/private/.rand    # random number file
 
 default_days   = 365                   # how long to certify for
 default_crl_days= 30                   # how long before next CRL
-default_md     = md5                   # md to use
+default_md     = sha256                   # md to use
 
 policy         = policy_any            # default policy
 email_in_dn    = no                    # Don't add the email into cert DN
@@ -32,14 +32,28 @@ email_in_dn    = no                    # Don't add the email into cert DN
 name_opt       = ca_default            # Subject name display option
 cert_opt       = ca_default            # Certificate display option
 copy_extensions = none                 # Don't copy extensions from request
+crlDistributionPoints = uri:{crl_url}/crl/{name}.pem
 
 [ policy_any ]
-countryName            = supplied
-stateOrProvinceName    = optional
-organizationName       = optional
-organizationalUnitName = optional
+countryName            = match
+stateOrProvinceName    = match
+organizationName       = match
+organizationalUnitName = match
 commonName             = supplied
 emailAddress           = optional
+
+[ crl_ext ]
+# Extension for CRLs (`man x509v3_config`).
+authorityKeyIdentifier=keyid:always
+
+[ cert ]
+basicConstraints = CA:FALSE
+nsComment = "{comment}"
+subjectKeyIdentifier = hash
+authorityKeyIdentifier = keyid,issuer
+keyUsage = {keyUsage}
+extendedKeyUsage = {extendedKeyUsage}
+crlDistributionPoints = uri:{crl_url}/crl/{name}.pem
 """
 
 
@@ -78,6 +92,7 @@ def update_crl(basedir):
 
 
 SUBJECT = "/C={country}/ST={state}/L={location}/O={organization}/OU={organizational_unit}/emailAddress={owner}/CN={common_name}"
+KEY_USAGES = ["digital_signature", "content_commitment", "key_encipherment", "data_encipherment", "key_agreement", "key_cert_sign", "crl_sign"]
 
 
 class OpensslIssuerPlugin(IssuerPlugin):
@@ -104,13 +119,29 @@ class OpensslIssuerPlugin(IssuerPlugin):
         ca_name = issuer_options["authority"].name
         basedir = os.path.join(current_app.config.get("OPENSSL_DIR"), ca_name)
 
+        usages = []
+        for k in KEY_USAGES:
+            if issuer_options["extensions"]["key_usage"].getattr(k):
+                usages.append(k)
+        print(issuer_options["extensions"]["extended_key_usage"].oid)
+
+        subj = SUBJECT.format(**issuer_options)
+        cnf_options = {
+            "crl_url": "",
+            "name": issuer_options["authority"].name,
+            "comment": issuer_options["description"],
+            "keyUsage": ", ".join(usages),
+            "extendedKeyUsage": issuer_options["extensions"]["extended_key_usage"].oid,
+        }
+
         with TempFile("w", delete=True) as csrf, TempFile("w", delete=True) as cnf:
             csrf.write(csr) and csrf.flush()
-            cnf.write(openssl_cnf) and cnf.flush()
+            cnf.write(openssl_cnf.format(cnf_options)) and cnf.flush()
             subprocess.check_call(["/usr/bin/openssl", "ca",
                                    "-batch",
                                    "-config", cnf.name,
                                    "-in", csrf.name,
+                                   "-subj", subj,
                                    "-out", csrf.name + ".crt"], cwd=basedir)
             with open(csrf.name + ".crt") as crt:
                 cert = crt.read()
