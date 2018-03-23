@@ -32,7 +32,7 @@ email_in_dn    = no                    # Don't add the email into cert DN
 name_opt       = ca_default            # Subject name display option
 cert_opt       = ca_default            # Certificate display option
 copy_extensions = none                 # Don't copy extensions from request
-crlDistributionPoints = uri:{crl_url}/crl/{name}.pem
+crlDistributionPoints = URI:{crl_url}/crl/{name}.pem
 
 [ policy_any ]
 countryName            = match
@@ -53,7 +53,7 @@ subjectKeyIdentifier = hash
 authorityKeyIdentifier = keyid,issuer
 keyUsage = {keyUsage}
 extendedKeyUsage = {extendedKeyUsage}
-crlDistributionPoints = uri:{crl_url}/crl/{name}.pem
+crlDistributionPoints = URI:{crl_url}/crl/{name}.pem
 """
 
 
@@ -92,7 +92,7 @@ def update_crl(basedir):
 
 
 SUBJECT = "/C={country}/ST={state}/L={location}/O={organization}/OU={organizational_unit}/emailAddress={owner}/CN={common_name}"
-KEY_USAGES = ["digital_signature", "content_commitment", "key_encipherment", "data_encipherment", "key_agreement", "key_cert_sign", "crl_sign"]
+KEY_USAGES = [("digital_signature", "digitalSignature"), ("content_commitment", "contentCommitment"), ("key_encipherment", "keyEncipherment"), ("data_encipherment", "dataEncipherment"), ("key_agreement", "keyAgreement"), ("key_cert_sign", "keyCertSign"), ("crl_sign", "crlSign")]
 
 
 class OpensslIssuerPlugin(IssuerPlugin):
@@ -122,8 +122,8 @@ class OpensslIssuerPlugin(IssuerPlugin):
 
         usages = []
         for k in KEY_USAGES:
-            if getattr(issuer_options["extensions"]["key_usage"], k, None):
-                usages.append(k)
+            if getattr(issuer_options["extensions"]["key_usage"], k[0], None):
+                usages.append(k[1])
 
         subj = SUBJECT.format(**issuer_options)
         cnf_options = {
