@@ -98,7 +98,7 @@ KEY_USAGES = ["digital_signature", "content_commitment", "key_encipherment", "da
 class OpensslIssuerPlugin(IssuerPlugin):
     title = 'Openssl issuer'
     slug = 'openssl-issuer'
-    description = 'Use openssl as backend for the certificate cration.'
+    description = 'Use openssl as backend for the certificate creation.'
     version = lemur_openssl_issuer.VERSION
 
     author = 'Romain Fontaine'
@@ -106,7 +106,7 @@ class OpensslIssuerPlugin(IssuerPlugin):
 
     def __init__(self, *args, **kwargs):
         required_vars = [
-            'OPENSSL_DIR',
+            'OPENSSL_ISSUER_BASE_DIR', 'OPENSSL_ISSUER_CRL_BASE_URL'
         ]
 
         validate_conf(current_app, required_vars)
@@ -117,7 +117,7 @@ class OpensslIssuerPlugin(IssuerPlugin):
         print("csr: ", csr)
         print("options: ", issuer_options)
         ca_name = issuer_options["authority"].name
-        basedir = os.path.join(current_app.config.get("OPENSSL_DIR"), ca_name)
+        basedir = os.path.join(current_app.config.get("OPENSSL_ISSUER_BASE_DIR"), ca_name)
 
         usages = []
         for k in KEY_USAGES:
@@ -127,7 +127,7 @@ class OpensslIssuerPlugin(IssuerPlugin):
 
         subj = SUBJECT.format(**issuer_options)
         cnf_options = {
-            "crl_url": "",
+            "crl_url": current_app.config.get("OPENSSL_ISSUER_CRL_BASE_URL"),
             "name": issuer_options["authority"].name,
             "comment": issuer_options["description"],
             "keyUsage": ", ".join(usages),
@@ -136,7 +136,7 @@ class OpensslIssuerPlugin(IssuerPlugin):
 
         with TempFile("w", delete=True) as csrf, TempFile("w", delete=True) as cnf:
             csrf.write(csr) and csrf.flush()
-            cnf.write(openssl_cnf.format(cnf_options)) and cnf.flush()
+            cnf.write(openssl_cnf.format(**cnf_options)) and cnf.flush()
             subprocess.check_call(["/usr/bin/openssl", "ca",
                                    "-batch",
                                    "-config", cnf.name,
