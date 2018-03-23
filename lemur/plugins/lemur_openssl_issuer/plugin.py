@@ -105,8 +105,8 @@ class OpensslIssuerPlugin(IssuerPlugin):
         basedir = os.path.join(current_app.config.get("OPENSSL_DIR"), ca_name)
 
         with TempFile("w", delete=True) as csrf, TempFile("w", delete=True) as cnf:
-            csrf.write(csr)
-            cnf.write(openssl_cnf)
+            csrf.write(csr) and csrf.flush()
+            cnf.write(openssl_cnf) and cnf.flush()
             subprocess.check_call(["/usr/bin/openssl", "ca",
                                    "-batch",
                                    "-config", cnf.name,
