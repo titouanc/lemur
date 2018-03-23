@@ -121,7 +121,7 @@ class OpensslIssuerPlugin(IssuerPlugin):
 
         usages = []
         for k in KEY_USAGES:
-            if issuer_options["extensions"]["key_usage"].getattr(k):
+            if getattr(issuer_options["extensions"]["key_usage"], k, None):
                 usages.append(k)
         print(issuer_options["extensions"]["extended_key_usage"].oid)
 
