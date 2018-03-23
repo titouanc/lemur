@@ -38,7 +38,7 @@ crlDistributionPoints = uri:{crl_url}/crl/{name}.pem
 countryName            = match
 stateOrProvinceName    = match
 organizationName       = match
-organizationalUnitName = match
+organizationalUnitName = supplied
 commonName             = supplied
 emailAddress           = optional
 
