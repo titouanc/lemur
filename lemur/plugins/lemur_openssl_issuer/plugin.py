@@ -6,7 +6,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 
 import os
 import subprocess
-import tempfile
+from tempfile import NamedTemporaryFile as TempFile
 
 from lemur.plugins.bases import IssuerPlugin
 from lemur.plugins import lemur_openssl_issuer
@@ -88,7 +88,7 @@ SUBJECT = "/C={country}/ST={state}/L={location}/O={organization}/OU={organizatio
 
 class OpensslIssuerPlugin(IssuerPlugin):
     title = 'Openssl issuer'
-    slug = 'opensslIssuer'
+    slug = 'openssl-issuer'
     description = 'Use openssl as backend for the certificate cration.'
     version = lemur_openssl_issuer.VERSION
 
@@ -110,16 +110,16 @@ class OpensslIssuerPlugin(IssuerPlugin):
         ca_name = issuer_options["authority"].name
         basedir = os.path.join(current_app.config.get("OPENSSL_DIR"), ca_name)
 
-        f = tempfile.NamedTemporaryFile("w", delete=False)
-        f.write(csr)
-        f.close()
-        subprocess.check_call(["/usr/bin/openssl", "ca",
-                               "-batch",
-                               "-config", "openssl.cnf",
-                               "-in", f.name,
-                               "-out", f.name + ".crt"], cwd=basedir)
-        with open(f.name + ".crt") as crt:
-            cert = crt.read()
+        with TempFile("w", delete=True) as csrf, TempFile("w", delete=True) as cnf:
+            csrf.write(csr)
+            cnf.write(openssl_cnf)
+            subprocess.check_call(["/usr/bin/openssl", "ca",
+                                   "-batch",
+                                   "-config", cnf.name,
+                                   "-in", csrf.name,
+                                   "-out", csrf.name + ".crt"], cwd=basedir)
+            with open(csrf.name + ".crt") as crt:
+                cert = crt.read()
 
         parsed_cert = parse_certificate(cert)
 
