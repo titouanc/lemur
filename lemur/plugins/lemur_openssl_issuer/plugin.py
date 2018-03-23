@@ -106,7 +106,8 @@ class OpensslIssuerPlugin(IssuerPlugin):
 
     def __init__(self, *args, **kwargs):
         required_vars = [
-            'OPENSSL_ISSUER_BASE_DIR', 'OPENSSL_ISSUER_CRL_BASE_URL'
+            'OPENSSL_ISSUER_BASE_DIR',
+            'OPENSSL_ISSUER_CRL_BASE_URL'
         ]
 
         validate_conf(current_app, required_vars)
@@ -139,6 +140,7 @@ class OpensslIssuerPlugin(IssuerPlugin):
             cnf.write(openssl_cnf.format(**cnf_options)) and cnf.flush()
             subprocess.check_call(["/usr/bin/openssl", "ca",
                                    "-batch", "-notext",
+                                   "-extensions", "cert",
                                    "-config", cnf.name,
                                    "-in", csrf.name,
                                    "-subj", subj,
