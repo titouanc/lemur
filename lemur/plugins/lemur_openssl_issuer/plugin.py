@@ -1,9 +1,5 @@
 from flask import current_app
 
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, serialization
-
 import os
 import subprocess
 from tempfile import NamedTemporaryFile as TempFile
@@ -11,8 +7,6 @@ from tempfile import NamedTemporaryFile as TempFile
 from lemur.plugins.bases import IssuerPlugin
 from lemur.plugins import lemur_openssl_issuer
 from lemur.common.utils import validate_conf, parse_certificate
-
-from lemur.certificates.service import create_csr
 
 openssl_cnf = """
 [ ca ]
