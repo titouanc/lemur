@@ -134,6 +134,9 @@ class OpensslIssuerPlugin(IssuerPlugin):
             "extendedKeyUsage": issuer_options["extensions"]["extended_key_usage"].oid.dotted_string,
         }
 
+        days = issuer_options["validity_end"] - issuer_options["validity_start"]
+        days = days.days
+
         with TempFile("w", delete=True) as csrf, TempFile("w", delete=True) as cnf:
             csrf.write(csr) and csrf.flush()
             cnf.write(openssl_cnf.format(**cnf_options)) and cnf.flush()
@@ -142,6 +145,7 @@ class OpensslIssuerPlugin(IssuerPlugin):
                                    "-extensions", "cert",
                                    "-config", cnf.name,
                                    "-in", csrf.name,
+                                   "-days", "{}".format(days),
                                    "-subj", subj,
                                    "-out", csrf.name + ".crt"], cwd=basedir)
             with open(csrf.name + ".crt") as crt:
