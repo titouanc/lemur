@@ -138,7 +138,7 @@ class OpensslIssuerPlugin(IssuerPlugin):
             csrf.write(csr) and csrf.flush()
             cnf.write(openssl_cnf.format(**cnf_options)) and cnf.flush()
             subprocess.check_call(["/usr/bin/openssl", "ca",
-                                   "-batch",
+                                   "-batch", "-notext",
                                    "-config", cnf.name,
                                    "-in", csrf.name,
                                    "-subj", subj,
