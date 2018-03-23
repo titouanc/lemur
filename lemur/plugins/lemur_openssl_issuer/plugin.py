@@ -124,7 +124,6 @@ class OpensslIssuerPlugin(IssuerPlugin):
         for k in KEY_USAGES:
             if getattr(issuer_options["extensions"]["key_usage"], k, None):
                 usages.append(k)
-        print(issuer_options["extensions"]["extended_key_usage"].oid)
 
         subj = SUBJECT.format(**issuer_options)
         cnf_options = {
@@ -132,7 +131,7 @@ class OpensslIssuerPlugin(IssuerPlugin):
             "name": issuer_options["authority"].name,
             "comment": issuer_options["description"],
             "keyUsage": ", ".join(usages),
-            "extendedKeyUsage": issuer_options["extensions"]["extended_key_usage"].oid,
+            "extendedKeyUsage": issuer_options["extensions"]["extended_key_usage"].oid.dotted_string,
         }
 
         with TempFile("w", delete=True) as csrf, TempFile("w", delete=True) as cnf:
